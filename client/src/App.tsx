@@ -12,18 +12,26 @@ import CurrentCouponPage from "./pages/admin/CurrentCouponPage";
 import CreateCouponPage from "./pages/admin/CreateCouponPage";
 import TodayCountPage from "./pages/admin/TodayCountPage";
 import HistoryPage from "./pages/admin/HistoryPage";
+import { InAppBrowserGuard } from "./components/InAppBrowserGuard";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ユーザー向けクーポンページ */}
-        <Route path="/" element={<CouponPage />} />
+        {/* ユーザー向けクーポンページ（アプリ内ブラウザ検知あり） */}
+        <Route
+          path="/"
+          element={
+            <InAppBrowserGuard>
+              <CouponPage />
+            </InAppBrowserGuard>
+          }
+        />
 
         {/* 管理者ログインページ */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
 
-        {/* 管理画面（認証必須） */}
+        {/* /admin へのアクセスは /admin/login へリダイレクト（未認証時） */}
         <Route
           path="/admin"
           element={
