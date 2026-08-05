@@ -12,7 +12,6 @@ import toast, { Toaster } from "react-hot-toast";
 type CouponType = "public" | "code";
 
 interface CouponForm {
-  id: string;
   type: CouponType;
   title: string;
   code: string;
@@ -23,7 +22,6 @@ interface CouponForm {
 }
 
 const defaultForm = (): CouponForm => ({
-  id: `coupon-${Date.now()}`,
   type: "public",
   title: "",
   code: "",
@@ -35,8 +33,9 @@ const defaultForm = (): CouponForm => ({
 
 export default function CreateCouponPage() {
   const [form, setForm] = useState<CouponForm>(defaultForm());
-  const [generatedTs, setGeneratedTs] = useState<string>("");
-  const [generatedJson, setGeneratedJson] = useState<string>("");
+  const [generatedId, setGeneratedId] = useState<string>("");
+  const [generatedTsBlock, setGeneratedTsBlock] = useState<string>("");
+  const [generatedJsonBlock, setGeneratedJsonBlock] = useState<string>("");
   const tsRef = useRef<HTMLPreElement>(null);
   const jsonRef = useRef<HTMLPreElement>(null);
 
@@ -48,8 +47,8 @@ export default function CreateCouponPage() {
   };
 
   /** ランダムなIDを生成する */
-  const generateId = () => {
-    const prefix = form.type === "code" ? "coupon-code" : "coupon";
+  const makeId = (type: CouponType) => {
+    const prefix = type === "code" ? "coupon-code" : "coupon";
     return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
   };
 
@@ -74,11 +73,31 @@ export default function CreateCouponPage() {
       return;
     }
 
-    const id = generateId();
+    const id = makeId(form.type);
+    setGeneratedId(id);
     const maxUsesNum = form.maxUses ? parseInt(form.maxUses) : null;
 
-    // 新しいクーポンオブジェクト
-    const newCoupon: Record<string, unknown> = {
+    // coupon.ts に追加するオブジェクトブロック（インデント2スペース）
+    const tsLines = [
+      `  {`,
+      `    id: "${id}",`,
+      `    type: "${form.type}",`,
+      `    title: "${form.title}",`,
+      `    code: "${form.code}",`,
+      `    description: "${form.description}",`,
+      `    expires: "${form.expires}",`,
+      ...(form.type === "code"
+        ? [
+            `    secretCode: "${form.secretCode}",`,
+            `    maxUses: ${maxUsesNum ?? "null"},`,
+          ]
+        : []),
+      `  },`,
+    ];
+    setGeneratedTsBlock(tsLines.join("\n"));
+
+    // coupon.json に追加するオブジェクトブロック
+    const jsonObj: Record<string, unknown> = {
       id,
       type: form.type,
       title: form.title,
@@ -87,58 +106,12 @@ export default function CreateCouponPage() {
       expires: form.expires,
     };
     if (form.type === "code") {
-      newCoupon.secretCode = form.secretCode;
-      newCoupon.maxUses = maxUsesNum;
+      jsonObj.secretCode = form.secretCode;
+      jsonObj.maxUses = maxUsesNum;
     }
+    // 末尾カンマなし（配列の最後に追加する場合は前の要素にカンマが必要）
+    setGeneratedJsonBlock(JSON.stringify(jsonObj, null, 2));
 
-    // coupon.ts の生成（配列形式）
-    const tsCode = `/**
- * クーポンデータ定義ファイル
- *
- * このファイルを書き換えてGitHubへPushすると、
- * Renderが自動デプロイされ、新しいクーポンへ切り替わります。
- *
- * type: "public"  → 通常配布クーポン（トップページに表示）
- * type: "code"    → コード入力クーポン（シークレットコード入力で取得）
- */
-
-export interface Coupon {
-  id: string;
-  type: "public" | "code";
-  title: string;
-  code: string;
-  description: string;
-  expires: string;
-  secretCode?: string;
-  maxUses?: number | null;
-}
-
-/**
- * 配布中のクーポン一覧
- * ※ 既存のクーポンはそのまま残し、末尾に追加してください
- */
-export const coupons: Coupon[] = [
-  // ↓ 以下を既存の配列に追加してください
-  {
-    id: ${JSON.stringify(id)},
-    type: ${JSON.stringify(form.type)},
-    title: ${JSON.stringify(form.title)},
-    code: ${JSON.stringify(form.code)},
-    description: ${JSON.stringify(form.description)},
-    expires: ${JSON.stringify(form.expires)},${
-      form.type === "code"
-        ? `\n    secretCode: ${JSON.stringify(form.secretCode)},\n    maxUses: ${maxUsesNum ?? "null"},`
-        : ""
-    }
-  },
-];
-`;
-
-    // coupon.json の生成（配列形式、追加用オブジェクト）
-    const jsonCode = JSON.stringify([newCoupon], null, 2);
-
-    setGeneratedTs(tsCode);
-    setGeneratedJson(jsonCode);
     toast.success("コードを生成しました");
   };
 
@@ -331,13 +304,14 @@ export const coupons: Coupon[] = [
       </div>
 
       {/* 生成されたコード */}
-      {generatedTs && (
+      {generatedTsBlock && (
         <div className="generated-section">
-          {/* coupon.ts */}
+
+          {/* coupon.ts 追加ブロック */}
           <div className="code-card">
             <div className="code-card-header">
               <h3 className="code-card-title">
-                📄 client/src/data/coupon.ts（追加分）
+                📄 client/src/data/coupon.ts
               </h3>
               <div className="code-actions">
                 <button
@@ -348,22 +322,40 @@ export const coupons: Coupon[] = [
                 </button>
                 <button
                   className="btn btn-sm btn-primary"
-                  onClick={() => copyToClipboard(generatedTs, "coupon.ts")}
+                  onClick={() => copyToClipboard(generatedTsBlock, "coupon.ts 追加コード")}
                 >
                   コピー
                 </button>
               </div>
             </div>
+
+            {/* 貼り付け場所の説明 */}
+            <div className="paste-guide">
+              <span className="paste-guide-icon">📌</span>
+              <span>
+                <code>coupons: Coupon[] = [</code> の配列内、
+                最後の <code>{"}"}</code> の直後（<code>];</code> の前）に貼り付けてください
+              </span>
+            </div>
+
+            {/* ファイルの構造イメージ */}
+            <div className="file-context">
+              <div className="file-context-line file-context-line--dim">export const coupons: Coupon[] = [</div>
+              <div className="file-context-line file-context-line--dim">  {"{"} ... 既存のクーポン ... {"}"},</div>
+              <div className="file-context-line file-context-line--highlight">  ← ここに追加</div>
+              <div className="file-context-line file-context-line--dim">];</div>
+            </div>
+
             <pre ref={tsRef} className="code-block">
-              <code>{generatedTs}</code>
+              <code>{generatedTsBlock}</code>
             </pre>
           </div>
 
-          {/* coupon.json */}
+          {/* coupon.json 追加ブロック */}
           <div className="code-card">
             <div className="code-card-header">
               <h3 className="code-card-title">
-                📄 server/shared/coupon.json（追加分）
+                📄 server/shared/coupon.json
               </h3>
               <div className="code-actions">
                 <button
@@ -374,31 +366,55 @@ export const coupons: Coupon[] = [
                 </button>
                 <button
                   className="btn btn-sm btn-primary"
-                  onClick={() => copyToClipboard(generatedJson, "coupon.json")}
+                  onClick={() => copyToClipboard(generatedJsonBlock, "coupon.json 追加コード")}
                 >
                   コピー
                 </button>
               </div>
             </div>
+
+            {/* 貼り付け場所の説明 */}
+            <div className="paste-guide">
+              <span className="paste-guide-icon">📌</span>
+              <span>
+                配列の最後の <code>{"}"}</code> の後にカンマ（<code>,</code>）を追加し、
+                その下に貼り付けてください
+              </span>
+            </div>
+
+            {/* ファイルの構造イメージ */}
+            <div className="file-context">
+              <div className="file-context-line file-context-line--dim">{"["}</div>
+              <div className="file-context-line file-context-line--dim">{"  { ... 既存のクーポン ... },"}</div>
+              <div className="file-context-line file-context-line--highlight">  ← ここに追加（前の {"}"} にカンマを忘れずに）</div>
+              <div className="file-context-line file-context-line--dim">{"]"}</div>
+            </div>
+
             <pre ref={jsonRef} className="code-block">
-              <code>{generatedJson}</code>
+              <code>{generatedJsonBlock}</code>
             </pre>
           </div>
 
+          {/* 注意事項 */}
           <div className="info-box">
-            <h4>📌 反映手順</h4>
-            <ol>
+            <h4>⚠️ 貼り付け時の注意</h4>
+            <ul>
               <li>
-                GitHub の <code>client/src/data/coupon.ts</code> を開き、
-                <code>coupons</code> 配列に上記オブジェクトを追加して保存
+                <strong>coupon.ts</strong>：前のクーポンの末尾に <code>,</code>（カンマ）があることを確認してください
               </li>
               <li>
-                GitHub の <code>server/shared/coupon.json</code> を開き、
-                配列に上記オブジェクトを追加して保存
+                <strong>coupon.json</strong>：前のクーポンの <code>{"}"}</code> の後に <code>,</code>（カンマ）を追加してから貼り付けてください
               </li>
-              <li>GitHub へ Push する</li>
-              <li>Render が自動デプロイされ、新しいクーポンが追加されます</li>
-            </ol>
+              <li>
+                両ファイルを保存して GitHub へ Push すると Render が自動デプロイします
+              </li>
+            </ul>
+          </div>
+
+          {/* ID確認 */}
+          <div className="id-notice">
+            生成されたID: <code className="code-inline">{generatedId}</code>
+            （このIDは変更しないでください）
           </div>
         </div>
       )}
