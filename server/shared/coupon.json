@@ -1,7 +1,6 @@
 {
-  "title": "100円OFFクーポン",
-  "code": "WELCOME100",
-  "description": "ご来店ありがとうございます！本日限り、お会計から100円割引いたします。",
-  "expires": "2026-12-31",
-  "note": "※ 1日1回限定。他のクーポンとの併用不可。"
+  "title": "100%off",
+  "code": "SUMMER",
+  "description": "景気がいいね",
+  "expires": "2026-08-05"
 }
