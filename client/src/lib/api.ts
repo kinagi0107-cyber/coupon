@@ -6,7 +6,7 @@
 import axios from "axios";
 
 // 環境変数からAPIのベースURLを取得（本番: 同一オリジン、開発: localhost:3001）
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // Axiosインスタンスの作成
 const api = axios.create({
