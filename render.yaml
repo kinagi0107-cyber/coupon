@@ -8,23 +8,15 @@ databases:
     region: oregon
 
 services:
-  # Web サーバー（Express + React）
+  # Web サーバー（Express + React 静的ファイル配信）
   - type: web
     name: coupon-system
     env: node
     plan: free
     region: oregon
-    # ビルドコマンド:
-    # 1. バックエンドの依存関係インストールとビルド
-    # 2. フロントエンドの依存関係インストールとビルド
-    # 3. Prisma のマイグレーション実行
-    buildCommand: >-
-      cd server && npm install && npm run build &&
-      cd ../client && npm install && npm run build &&
-      cd ../server && npx prisma migrate deploy
-    # 起動コマンド:
-    # ビルドされたバックエンドサーバーを起動
-    startCommand: cd server && npm start
+    rootDir: .
+    buildCommand: "cd server && npm install && npm run build && cd ../client && npm install && npm run build && cd ../server && npx prisma migrate deploy"
+    startCommand: "cd server && npm start"
     envVars:
       # データベース接続URL（Render が自動的に設定）
       - key: DATABASE_URL
