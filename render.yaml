@@ -14,7 +14,6 @@ services:
     env: node
     plan: free
     region: oregon
-    rootDir: .
     buildCommand: "cd server && npm install && npm run build && cd ../client && npm install && npm run build && cd ../server && npx prisma migrate deploy"
     startCommand: "cd server && npm start"
     envVars:
