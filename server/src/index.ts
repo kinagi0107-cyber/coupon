@@ -70,7 +70,6 @@ app.use("/api/admin", adminRouter);
 // ===== 本番環境: フロントエンドの静的ファイルを配信 =====
 if (process.env.NODE_ENV === "production") {
   const clientBuildPath = path.join(__dirname, "../../client/dist");
-  console.log(`📂 静的ファイルを配信中: ${clientBuildPath}`);
   app.use(express.static(clientBuildPath));
 
   // SPAのフォールバック
