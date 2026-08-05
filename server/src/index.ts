@@ -33,12 +33,7 @@ app.use(
 );
 
 // CORS設定
-app.use(
-  cors({
-    origin: true, // 全てのオリジンを許可（本番環境では適切に制限することを推奨）
-    credentials: true,
-  })
-);
+app.use(cors()); // 最も緩い設定でテスト
 
 // レートリミット設定
 const generalLimiter = rateLimit({
