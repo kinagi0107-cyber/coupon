@@ -1,0 +1,44 @@
+# Render デプロイ設定ファイル
+# Web Service (Node.js + React) と PostgreSQL データベースの構成
+
+services:
+  # 1. データベース（PostgreSQL）
+  - type: psql
+    name: coupon-db
+    plan: free # 無料プラン
+    region: oregon # お好みのリージョンに変更可能
+
+  # 2. Web サーバー（Express + React）
+  - type: web
+    name: coupon-system
+    env: node
+    plan: free # 無料プラン
+    region: oregon
+    # ビルドコマンド:
+    # 1. バックエンドの依存関係インストールとビルド
+    # 2. フロントエンドの依存関係インストールとビルド
+    # 3. Prisma のマイグレーション実行
+    buildCommand: |
+      cd server && npm install && npm run build && \
+      cd ../client && npm install && npm run build && \
+      cd ../server && npx prisma migrate deploy
+    # 起動コマンド:
+    # ビルドされたバックエンドサーバーを起動
+    startCommand: cd server && npm start
+    envVars:
+      # データベース接続URL（Render が自動的に設定）
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coupon-db
+          property: connectionString
+      # Node.js 環境設定
+      - key: NODE_ENV
+        value: production
+      # 管理者認証情報（Render ダッシュボードから上書き可能）
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        value: nanaehama2611
+      # JWT署名シークレット（デプロイ時に自動生成または手動設定）
+      - key: JWT_SECRET
+        generateValue: true

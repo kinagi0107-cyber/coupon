@@ -1,0 +1,31 @@
+// Prisma スキーマ定義
+// クーポン利用ログを管理するデータベース設計
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// クーポン利用ログ
+/// 1日1回の利用制限をフィンガープリント + 利用日付で判定する
+model CouponLog {
+  id          Int      @id @default(autoincrement())
+  /// ブラウザフィンガープリントID（端末識別子）
+  fingerprint String
+  /// 利用されたクーポンコード
+  couponCode  String
+  /// 利用日（YYYY-MM-DD形式、日付変更リセット判定に使用）
+  usedDate    String
+  /// 利用日時（タイムスタンプ）
+  usedAt      DateTime @default(now())
+  /// レコード作成日時
+  createdAt   DateTime @default(now())
+
+  @@index([fingerprint, usedDate])
+  @@index([usedDate])
+  @@map("coupon_logs")
+}
