@@ -14,8 +14,10 @@ services:
     env: node
     plan: free
     region: oregon
-    buildCommand: "cd server && npm install && npm run build && cd ../client && npm install && npm run build && cd ../server && npx prisma migrate deploy"
-    startCommand: "cd server && npm start"
+    # ビルドコマンド: サーバー・クライアントのビルドのみ（DBマイグレーションは起動時に実行）
+    buildCommand: "cd server && npm install && npm run build && cd ../client && npm install && npm run build"
+    # 起動コマンド: マイグレーション実行後にサーバー起動
+    startCommand: "cd server && npx prisma migrate deploy && npm start"
     envVars:
       # データベース接続URL（Render が自動的に設定）
       - key: DATABASE_URL
