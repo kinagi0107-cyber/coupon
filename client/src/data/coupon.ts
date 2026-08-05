@@ -53,3 +53,13 @@ export const coupons: Coupon[] = [
     maxUses: 100,
   },
 ];
+
+  {
+    id: "coupon-mgm1bg",
+    type: "public",
+    title: "100",
+    code: "natsu",
+    description: "100",
+    expires: "2026-08-03",
+  },
+];
