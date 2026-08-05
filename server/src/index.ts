@@ -24,32 +24,23 @@ const PORT = process.env.PORT || 3001;
 // ===== セキュリティミドルウェア =====
 
 // Helmet: セキュリティ関連HTTPヘッダーを設定
+// フロントエンドの読み込みを阻害しないよう、CSPは無効化または緩和する
 app.use(
   helmet({
+    contentSecurityPolicy: false, // テストのため一時的に無効化
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
 // CORS設定
-const allowedOrigins = process.env.CLIENT_URL
-  ? [process.env.CLIENT_URL]
-  : ["http://localhost:5173", "http://localhost:4173"];
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // 開発環境ではoriginなしのリクエスト（同一オリジン）も許可
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS policy violation"));
-      }
-    },
+    origin: true, // 全てのオリジンを許可（本番環境では適切に制限することを推奨）
     credentials: true,
   })
 );
 
-// レートリミット: API全体に適用（15分間に100リクエストまで）
+// レートリミット設定
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -58,7 +49,6 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// クーポン使用APIには厳しいレートリミット（15分間に10リクエストまで）
 const couponUseLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -67,10 +57,8 @@ const couponUseLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use(generalLimiter);
-
 // ===== ボディパーサー =====
-app.use(express.json({ limit: "10kb" })); // リクエストボディサイズ制限
+app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // ===== ヘルスチェック =====
@@ -78,8 +66,9 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// ===== APIルート =====
-app.use("/api/coupon/use", couponUseLimiter); // クーポン使用に追加レートリミット
+// ===== APIルート (レートリミット適用) =====
+app.use("/api", generalLimiter);
+app.use("/api/coupon/use", couponUseLimiter);
 app.use("/api/coupon", couponRouter);
 app.use("/api/admin", adminRouter);
 
@@ -88,9 +77,14 @@ if (process.env.NODE_ENV === "production") {
   const clientBuildPath = path.join(__dirname, "../../client/dist");
   app.use(express.static(clientBuildPath));
 
-  // SPAのフォールバック（React Router対応）
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(clientBuildPath, "index.html"));
+  // SPAのフォールバック
+  app.get("*", (req, res) => {
+    // APIリクエストでない場合のみindex.htmlを返す
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(clientBuildPath, "index.html"));
+    } else {
+      res.status(404).json({ error: "API endpoint not found" });
+    }
   });
 }
 
