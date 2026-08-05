@@ -1,5 +1,6 @@
 /**
  * 管理画面 - 本日の利用人数ページ
+ * クーポン別の内訳も表示する
  */
 
 import { useState, useEffect } from "react";
@@ -67,11 +68,39 @@ export default function TodayCountPage() {
 
       {data && (
         <>
+          {/* 合計カード */}
           <div className="count-card">
             <div className="count-date">{data.date}</div>
             <div className="count-number">{data.count}</div>
-            <div className="count-unit">人</div>
+            <div className="count-unit">件</div>
           </div>
+
+          {/* クーポン別内訳 */}
+          {data.breakdown && data.breakdown.length > 0 && (
+            <div className="breakdown-section">
+              <h3 className="breakdown-title">クーポン別内訳</h3>
+              <div className="table-container">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>クーポン名</th>
+                      <th>クーポンコード</th>
+                      <th>利用件数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.breakdown.map((item) => (
+                      <tr key={item.couponCode}>
+                        <td>{item.couponTitle || "—"}</td>
+                        <td><code className="code-inline">{item.couponCode}</code></td>
+                        <td><strong>{item.count}</strong> 件</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="count-info">
             <p>

@@ -1,5 +1,5 @@
 // Prisma スキーマ定義
-// クーポン利用ログを管理するデータベース設計
+// 複数クーポン対応・コード入力クーポン利用人数管理
 
 generator client {
   provider = "prisma-client-js"
@@ -11,21 +11,49 @@ datasource db {
 }
 
 /// クーポン利用ログ
-/// 1日1回の利用制限をフィンガープリント + 利用日付で判定する
+/// フィンガープリント + クーポンコード + 利用日付 で1日1回制限を判定する
 model CouponLog {
   id          Int      @id @default(autoincrement())
+
   /// ブラウザフィンガープリントID（端末識別子）
   fingerprint String
-  /// 利用されたクーポンコード
+
+  /// 利用されたクーポンコード（クーポン単位で使用済み判定）
   couponCode  String
+
+  /// クーポン名（履歴表示用）
+  couponTitle String   @default("")
+
   /// 利用日（YYYY-MM-DD形式、日付変更リセット判定に使用）
   usedDate    String
+
   /// 利用日時（タイムスタンプ）
   usedAt      DateTime @default(now())
+
   /// レコード作成日時
   createdAt   DateTime @default(now())
 
+  /// フィンガープリント + クーポンコード + 利用日付 の組み合わせでユニーク制約
+  @@unique([fingerprint, couponCode, usedDate])
   @@index([fingerprint, usedDate])
   @@index([usedDate])
+  @@index([couponCode])
   @@map("coupon_logs")
+}
+
+/// コード入力クーポンの利用回数カウンター
+/// maxUses（上限）との比較に使用する
+model CodeUseCount {
+  id         Int      @id @default(autoincrement())
+
+  /// クーポンコード（coupon.jsonのcodeと対応）
+  couponCode String   @unique
+
+  /// 累計利用回数
+  useCount   Int      @default(0)
+
+  /// 最終更新日時
+  updatedAt  DateTime @updatedAt
+
+  @@map("code_use_counts")
 }

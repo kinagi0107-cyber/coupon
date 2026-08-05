@@ -1,6 +1,20 @@
-{
-  "title": "100%off",
-  "code": "SUMMER",
-  "description": "景気がいいね",
-  "expires": "2026-08-05"
-}
+[
+  {
+    "id": "coupon-001",
+    "type": "public",
+    "title": "100円OFFクーポン",
+    "code": "DISCOUNT100",
+    "description": "お会計から100円引き！",
+    "expires": "2026-12-31"
+  },
+  {
+    "id": "coupon-code-001",
+    "type": "code",
+    "title": "会員限定500円OFFクーポン",
+    "code": "MEMBER500",
+    "description": "会員様限定！お会計から500円引き！",
+    "expires": "2026-12-31",
+    "secretCode": "MEMBER2026",
+    "maxUses": 100
+  }
+]

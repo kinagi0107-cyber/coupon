@@ -1236,3 +1236,363 @@ code {
     font-size: 1.2rem;
   }
 }
+
+/* ===== 複数クーポン対応スタイル ===== */
+
+/* クーポン一覧（ユーザー画面） */
+.coupon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* クーポンカード（複数対応） */
+.coupon-card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+.coupon-card--used {
+  opacity: 0.75;
+}
+
+.coupon-card--code {
+  border: 2px solid var(--primary);
+}
+
+/* バッジ行 */
+.coupon-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* バッジ（ユーザー画面・管理画面共通） */
+.badge--available {
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge--used {
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge--code {
+  background-color: #ede9fe;
+  color: #7c3aed;
+  border: 1px solid #c4b5fd;
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge--public {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid #93c5fd;
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge--active {
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge--expired {
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge--limit {
+  background-color: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid #fcd34d;
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* 使用日時 */
+.coupon-used-time {
+  color: var(--danger);
+  font-size: 0.8125rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* クーポンなしメッセージ */
+.no-coupon-message {
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+/* コード入力セクション */
+.code-input-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.code-toggle-btn {
+  width: 100%;
+  max-width: 360px;
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--primary-light);
+}
+
+.code-input-form {
+  width: 100%;
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.code-input-hint {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 0.875rem;
+  text-align: center;
+}
+
+.code-input-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.code-input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  color: var(--text);
+  background-color: #fff;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.code-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* モーダル - クーポン名表示 */
+.modal-coupon-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+/* ===== 管理画面 - 複数クーポン一覧 ===== */
+
+.coupon-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.coupon-admin-card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.coupon-admin-card--warning {
+  border: 2px solid var(--warning);
+}
+
+.coupon-warnings {
+  background-color: var(--warning-light);
+  border-bottom: 1px solid #fcd34d;
+  padding: 0.625rem 1.25rem;
+}
+
+.warning-text {
+  color: var(--warning);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* アラートバナー */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  margin-bottom: 1.25rem;
+}
+
+.alert--warning {
+  background-color: var(--warning-light);
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* ===== 管理画面 - クーポン種別選択 ===== */
+
+.type-selector {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.type-option {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.type-option input[type="radio"] {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+
+.type-option--active {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.type-option-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.type-option-label strong {
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.type-option-label small {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* 入力+ボタンの横並び */
+.input-with-btn {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-with-btn .form-input {
+  flex: 1;
+}
+
+/* フォームヒント */
+.form-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ===== 管理画面 - クーポン別内訳 ===== */
+
+.breakdown-section {
+  margin-bottom: 1.25rem;
+}
+
+.breakdown-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+/* ===== レスポンシブ（追加分） ===== */
+
+@media (max-width: 600px) {
+  .type-selector {
+    flex-direction: column;
+  }
+
+  .code-input-row {
+    flex-direction: column;
+  }
+
+  .code-input-row .btn {
+    width: 100%;
+  }
+
+  .input-with-btn {
+    flex-direction: column;
+  }
+
+  .input-with-btn .btn {
+    align-self: flex-start;
+  }
+}

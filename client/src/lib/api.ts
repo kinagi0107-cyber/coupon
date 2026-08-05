@@ -31,7 +31,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 403) {
-      // 管理画面のトークンが無効な場合はクリア
       const currentPath = window.location.pathname;
       if (currentPath.startsWith("/admin") && currentPath !== "/admin/login") {
         localStorage.removeItem("admin_token");
@@ -42,84 +41,138 @@ api.interceptors.response.use(
   }
 );
 
-// ===== クーポンAPI =====
+// ===== 型定義 =====
 
+/** クーポン1件の型（ユーザー向け） */
 export interface CouponData {
+  id: string;
+  type: "public" | "code";
   title: string;
   code: string;
   description: string;
   expires: string;
-  note?: string;
+  maxUses?: number | null;
 }
 
-export interface CouponStatusResponse {
-  used: boolean;
-  usedAt?: string;
-  couponCode?: string;
+/** 管理者向けクーポン（警告情報付き） */
+export interface AdminCouponData extends CouponData {
+  secretCode?: string;
+  isExpired: boolean;
+  isLimitReached: boolean;
+  useCount: number | null;
+  warnings: string[];
 }
 
+/** 全クーポンの利用状況マップ { couponCode: usedAt } */
+export interface CouponStatusMapResponse {
+  usedMap: Record<string, string>;
+}
+
+/** クーポン使用レスポンス */
 export interface UseResponse {
   success: boolean;
   message: string;
   usedAt: string;
 }
 
-/** 現在のクーポン情報を取得する */
-export const getCoupon = async (): Promise<CouponData> => {
-  const res = await api.get<{ coupon: CouponData }>("/coupon");
-  return res.data.coupon;
-};
+/** コード検証レスポンス */
+export interface VerifyCodeResponse {
+  coupon: CouponData;
+  alreadyUsed: boolean;
+  usedAt: string | null;
+}
 
-/** 端末の本日の利用状況を確認する */
-export const getCouponStatus = async (
-  fingerprint: string
-): Promise<CouponStatusResponse> => {
-  const res = await api.get<CouponStatusResponse>("/coupon/status", {
-    params: { fingerprint },
-  });
-  return res.data;
-};
-
-/** クーポンを使用する */
-export const useCoupon = async (
-  fingerprint: string,
-  couponCode: string
-): Promise<UseResponse> => {
-  const res = await api.post<UseResponse>("/coupon/use", {
-    fingerprint,
-    couponCode,
-  });
-  return res.data;
-};
-
-// ===== 管理者API =====
-
+/** 管理者ログインレスポンス */
 export interface LoginResponse {
   success: boolean;
   token: string;
   message: string;
 }
 
+/** 本日の利用人数レスポンス */
 export interface TodayResponse {
   date: string;
   count: number;
+  breakdown: Array<{
+    couponCode: string;
+    couponTitle: string;
+    count: number;
+  }>;
 }
 
+/** 利用履歴1件 */
 export interface HistoryLog {
   id: number;
   fingerprint: string;
   couponCode: string;
+  couponTitle: string;
   usedDate: string;
   usedAt: string;
   usedAtFormatted: string;
 }
 
+/** 利用履歴レスポンス */
 export interface HistoryResponse {
   logs: HistoryLog[];
   total: number;
   limit: number;
   offset: number;
 }
+
+// ===== クーポンAPI =====
+
+/**
+ * 通常配布クーポン一覧を取得する（有効期限内のみ）
+ */
+export const getCoupons = async (): Promise<CouponData[]> => {
+  const res = await api.get<{ coupons: CouponData[] }>("/coupon");
+  return res.data.coupons;
+};
+
+/**
+ * 端末の本日の全クーポン利用状況を取得する
+ * @returns usedMap: { couponCode: usedAt } 形式
+ */
+export const getCouponStatusMap = async (
+  fingerprint: string
+): Promise<Record<string, string>> => {
+  const res = await api.get<CouponStatusMapResponse>("/coupon/status", {
+    params: { fingerprint },
+  });
+  return res.data.usedMap;
+};
+
+/**
+ * シークレットコードを検証してコード入力クーポンを取得する
+ */
+export const verifySecretCode = async (
+  secretCode: string,
+  fingerprint: string
+): Promise<VerifyCodeResponse> => {
+  const res = await api.post<VerifyCodeResponse>("/coupon/verify-code", {
+    secretCode,
+    fingerprint,
+  });
+  return res.data;
+};
+
+/**
+ * クーポンを使用する
+ */
+export const useCoupon = async (
+  fingerprint: string,
+  couponCode: string,
+  couponTitle: string
+): Promise<UseResponse> => {
+  const res = await api.post<UseResponse>("/coupon/use", {
+    fingerprint,
+    couponCode,
+    couponTitle,
+  });
+  return res.data;
+};
+
+// ===== 管理者API =====
 
 /** 管理者ログイン */
 export const adminLogin = async (
@@ -150,10 +203,10 @@ export const getHistory = async (
   return res.data;
 };
 
-/** 管理者用クーポン情報を取得する */
-export const getAdminCoupon = async (): Promise<CouponData> => {
-  const res = await api.get<{ coupon: CouponData }>("/admin/coupon");
-  return res.data.coupon;
+/** 管理者用クーポン一覧を取得する（警告情報付き） */
+export const getAdminCoupons = async (): Promise<AdminCouponData[]> => {
+  const res = await api.get<{ coupons: AdminCouponData[] }>("/admin/coupons");
+  return res.data.coupons;
 };
 
 export default api;

@@ -92,6 +92,7 @@ export default function HistoryPage() {
                   <th>No.</th>
                   <th>利用日時</th>
                   <th>端末ID</th>
+                  <th>クーポン名</th>
                   <th>クーポンコード</th>
                 </tr>
               </thead>
@@ -110,6 +111,7 @@ export default function HistoryPage() {
                         {maskFingerprint(log.fingerprint)}
                       </code>
                     </td>
+                    <td>{log.couponTitle || "—"}</td>
                     <td>
                       <code className="code-inline">{log.couponCode}</code>
                     </td>
@@ -139,6 +141,10 @@ export default function HistoryPage() {
                   >
                     {maskFingerprint(log.fingerprint)}
                   </code>
+                </div>
+                <div className="history-card-row">
+                  <span className="history-card-label">クーポン名</span>
+                  <span>{log.couponTitle || "—"}</span>
                 </div>
                 <div className="history-card-row">
                   <span className="history-card-label">クーポンコード</span>

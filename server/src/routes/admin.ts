@@ -4,7 +4,7 @@
  * POST /api/admin/login    - 管理者ログイン（JWTトークン発行）
  * GET  /api/admin/history  - 利用履歴一覧取得（認証必須）
  * GET  /api/admin/today    - 本日の利用人数取得（認証必須）
- * GET  /api/admin/coupon   - 現在のクーポン情報取得（認証必須）
+ * GET  /api/admin/coupons  - 全クーポン情報取得（警告情報付き、認証必須）
  */
 
 import { Router, Request, Response } from "express";
@@ -16,31 +16,54 @@ import { getTodayJST, toJSTDateTimeString } from "../lib/dateUtils";
 
 const router = Router();
 
-// ログインリクエストのバリデーションスキーマ
+// ===== 型定義 =====
+interface CouponData {
+  id: string;
+  type: "public" | "code";
+  title: string;
+  code: string;
+  description: string;
+  expires: string;
+  secretCode?: string;
+  maxUses?: number | null;
+}
+
+// ===== バリデーションスキーマ =====
 const loginSchema = z.object({
   username: z.string().min(1, "ユーザー名は必須です"),
   password: z.string().min(1, "パスワードは必須です"),
 });
 
+// ===== ヘルパー =====
+
+/** coupon.json を読み込んで配列で返す */
+function loadCoupons(): CouponData[] {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const data = require("../../shared/coupon.json");
+  return Array.isArray(data) ? data : [data];
+}
+
+/** 有効期限チェック */
+function isExpired(expires: string): boolean {
+  const today = getTodayJST();
+  return today > expires;
+}
+
+// ===== エンドポイント =====
+
 /**
  * POST /api/admin/login
- * 管理者ログイン
- * 環境変数で設定されたユーザー名・パスワードと照合し、JWTを発行する
+ * 管理者ログイン（JWTトークン発行）
  */
 router.post("/login", async (req: Request, res: Response) => {
   try {
     const parseResult = loginSchema.safeParse(req.body);
-
     if (!parseResult.success) {
-      res
-        .status(400)
-        .json({ error: parseResult.error.errors[0]?.message || "入力エラー" });
+      res.status(400).json({ error: parseResult.error.errors[0]?.message || "入力エラー" });
       return;
     }
 
     const { username, password } = parseResult.data;
-
-    // 環境変数から管理者認証情報を取得
     const adminUsername = process.env.ADMIN_USERNAME;
     const adminPassword = process.env.ADMIN_PASSWORD;
     const jwtSecret = process.env.JWT_SECRET;
@@ -51,7 +74,6 @@ router.post("/login", async (req: Request, res: Response) => {
       return;
     }
 
-    // ユーザー名・パスワードの照合（タイミング攻撃対策として両方確認）
     const isUsernameValid = username === adminUsername;
     const isPasswordValid = password === adminPassword;
 
@@ -60,18 +82,13 @@ router.post("/login", async (req: Request, res: Response) => {
       return;
     }
 
-    // JWTトークンを発行（有効期限: 24時間）
     const token = jwt.sign(
       { username, role: "admin" },
       jwtSecret,
       { expiresIn: "24h" }
     );
 
-    res.json({
-      success: true,
-      token,
-      message: "ログインしました",
-    });
+    res.json({ success: true, token, message: "ログインしました" });
   } catch (err) {
     console.error("管理者ログインエラー:", err);
     res.status(500).json({ error: "ログイン処理に失敗しました" });
@@ -80,19 +97,31 @@ router.post("/login", async (req: Request, res: Response) => {
 
 /**
  * GET /api/admin/today
- * 本日の利用人数を取得する（認証必須）
+ * 本日の利用人数（クーポン別）を取得する（認証必須）
  */
 router.get("/today", authenticateToken, async (_req: Request, res: Response) => {
   try {
     const today = getTodayJST();
 
-    const count = await prisma.couponLog.count({
-      where: {
-        usedDate: today,
-      },
+    // 全体の利用件数
+    const totalCount = await prisma.couponLog.count({
+      where: { usedDate: today },
     });
 
-    res.json({ date: today, count });
+    // クーポン別の利用件数
+    const byCode = await prisma.couponLog.groupBy({
+      by: ["couponCode", "couponTitle"],
+      where: { usedDate: today },
+      _count: { id: true },
+    });
+
+    const breakdown = byCode.map((item) => ({
+      couponCode: item.couponCode,
+      couponTitle: item.couponTitle,
+      count: item._count.id,
+    }));
+
+    res.json({ date: today, count: totalCount, breakdown });
   } catch (err) {
     console.error("本日利用人数取得エラー:", err);
     res.status(500).json({ error: "利用人数の取得に失敗しました" });
@@ -106,7 +135,6 @@ router.get("/today", authenticateToken, async (_req: Request, res: Response) => 
  */
 router.get("/history", authenticateToken, async (req: Request, res: Response) => {
   try {
-    // ページネーション（デフォルト: 最新100件）
     const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
     const offset = parseInt(req.query.offset as string) || 0;
 
@@ -119,6 +147,7 @@ router.get("/history", authenticateToken, async (req: Request, res: Response) =>
           id: true,
           fingerprint: true,
           couponCode: true,
+          couponTitle: true,
           usedDate: true,
           usedAt: true,
         },
@@ -126,7 +155,6 @@ router.get("/history", authenticateToken, async (req: Request, res: Response) =>
       prisma.couponLog.count(),
     ]);
 
-    // 日時を日本時間に変換して返す
     const formattedLogs = logs.map((log) => ({
       ...log,
       usedAtFormatted: toJSTDateTimeString(log.usedAt),
@@ -140,16 +168,55 @@ router.get("/history", authenticateToken, async (req: Request, res: Response) =>
 });
 
 /**
- * GET /api/admin/coupon
- * 現在のクーポン情報を取得する（認証必須）
+ * GET /api/admin/coupons
+ * 全クーポン情報を取得する（認証必須）
+ * 有効期限切れ・利用上限到達の警告情報付き
  */
-router.get("/coupon", authenticateToken, async (_req: Request, res: Response) => {
+router.get("/coupons", authenticateToken, async (_req: Request, res: Response) => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const couponData = require("../../shared/coupon.json");
-    res.json({ coupon: couponData });
+    const coupons = loadCoupons();
+    const today = getTodayJST();
+
+    // コード入力クーポンの利用カウンターを取得
+    const codeCoupons = coupons.filter((c) => c.type === "code");
+    const counters = codeCoupons.length > 0
+      ? await prisma.codeUseCount.findMany({
+          where: {
+            couponCode: { in: codeCoupons.map((c) => c.code) },
+          },
+        })
+      : [];
+
+    const counterMap: Record<string, number> = {};
+    for (const counter of counters) {
+      counterMap[counter.couponCode] = counter.useCount;
+    }
+
+    // クーポンごとに警告情報を付加
+    const couponsWithStatus = coupons.map((coupon) => {
+      const expired = today > coupon.expires;
+      const useCount = counterMap[coupon.code] ?? 0;
+      const limitReached =
+        coupon.type === "code" &&
+        coupon.maxUses != null &&
+        useCount >= coupon.maxUses;
+
+      return {
+        ...coupon,
+        // secretCode は管理画面では表示（管理者向け）
+        isExpired: expired,
+        isLimitReached: limitReached,
+        useCount: coupon.type === "code" ? useCount : null,
+        warnings: [
+          ...(expired ? ["有効期限切れ"] : []),
+          ...(limitReached ? ["利用上限に達しました"] : []),
+        ],
+      };
+    });
+
+    res.json({ coupons: couponsWithStatus });
   } catch (err) {
-    console.error("クーポンデータ読み込みエラー:", err);
+    console.error("クーポン情報取得エラー:", err);
     res.status(500).json({ error: "クーポン情報の取得に失敗しました" });
   }
 });
