@@ -32,7 +32,8 @@ export interface Coupon {
 
 export const coupons: Coupon[] = [
   // ===== 通常配布クーポン =====
-    {
+[  
+  {
     id: "coupon-qbuajq",
     type: "public",
     title: "お盆の期間、毎日使える！お会計1000円以上で100円OFFクーポン！",
