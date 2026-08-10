@@ -156,7 +156,7 @@ export default function CouponPage() {
 
       {/* ヘッダー */}
       <header className="page-header">
-        <h1 className="site-title">クーポン</h1>
+        <h1 className="site-title">萬屋七重浜店で使えるクーポン一覧</h1>
       </header>
 
       <main className="page-main">
