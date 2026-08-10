@@ -32,21 +32,16 @@ export interface Coupon {
 
 export const coupons: Coupon[] = [
   // ===== 通常配布クーポン =====
-  {
-    id: "coupon-001",
+    {
+    id: "coupon-qbuajq",
     type: "public",
-    title: "100円OFFクーポン",
-    code: "DISCOUNT100",
-    description: "お会計から100円引き！",
-    expires: "2026-12-31",
-  },
-  {
-    id: "coupon-mgm1bg",
-    type: "public",
-    title: "100",
-    code: "natsu",
-    description: "100",
-    expires: "2026-08-03",
+    title: "お盆の期間、毎日使える！お会計1000円以上で100円OFFクーポン！",
+    code: "OBON100OFF",
+    description: "お盆の期間、なんと毎日使えちゃいます！
+※利用は一日一回までで、他クーポンとの併用はできません。
+※クーポンを使用する際はお会計の際に従業員に画面をお見せください。会計前に使用済みのボタンを押してしまった場合、使用することが出来ません。
+※金券・金プラには使用できません。",
+    expires: "2026-08-16",
   },
 
   // ===== コード入力クーポン =====
