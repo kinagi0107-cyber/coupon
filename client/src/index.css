@@ -1668,3 +1668,9 @@ code {
 .info-box li {
   margin-bottom: 0.25rem;
 }
+
+/* クーポン説明文の改行を有効にする */
+.coupon-description {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
