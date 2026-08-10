@@ -53,7 +53,7 @@ export const coupons: Coupon[] = [
     maxUses: null,
   },
   {
-    id: "coupon-code-88rh4m",
+    id: "coupon-code-89rh4m",
     type: "code",
     title: "X限定！お会計1000円以上で300円OFFクーポン！",
     code: "HOKUTONOBOOOOOON",
@@ -63,7 +63,7 @@ export const coupons: Coupon[] = [
     maxUses: null,
   },
   {
-    id: "coupon-code-88rh4m",
+    id: "coupon-code-90rh4m",
     type: "code",
     title: "Instagram限定！お会計1000円以上で300円OFFクーポン！",
     code: "HOKUTONOBOOOOON",
